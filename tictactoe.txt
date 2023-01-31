@@ -1,0 +1,274 @@
+#include <iostream>
+#include <set>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+#include <vector>
+#include <cctype>
+#include <sstream>
+using std::string;
+using std::vector;
+using std::stringstream;
+
+string board[3][3] = { {"", "", ""}, {"", "", ""}, {"", "", ""} };
+
+template <typename T>
+int length(T& array) {
+    return sizeof(array) / sizeof(array[0]);
+}
+
+string input() {
+    string in;
+
+    getline(std::cin, in);
+
+    return in;
+}
+
+void displayboard(bool with_coords) {
+    string string_to_print = "";
+
+    if (with_coords) {
+        string_to_print += "     1   2   3\n\n";
+    }
+
+    for (int i = 0; i < length(board); i++) {
+        string_to_print += " ";
+
+        if (with_coords) {
+            string_to_print += std::to_string(i + 1) + "  ";
+        }
+
+        for (int j = 0; j < length(board[i]); j++) {
+            string_to_print += " "; //leading space
+
+            //logic handles if space hasn't been played yet
+            if (board[i][j] == "") {
+                string_to_print += " ";
+            }
+            else {
+                string_to_print += board[i][j];
+            }
+
+            //line between this boardspace and next
+            if (j < length(board[i]) - 1)
+                string_to_print += " |";
+        }
+
+        //adds a line seperating the grid
+        if (i < length(board) - 1) {
+            if(with_coords)
+                string_to_print += "\n    -----------\n";
+            else
+                string_to_print += "\n -----------\n";
+        }
+    }
+
+    std::cout << string_to_print << std::endl;
+}
+
+bool pickfirst() {
+    //generate a random number from 0 to 1
+    srand(time(0));
+    int r = rand() % 2;
+
+    //return true 50% of the time, false other 50% of the time
+    return static_cast<bool>(r);
+}
+
+bool checkequals(vector<string>& strs) {
+    std::set<string> equal_set;
+
+    
+
+    for (string x : strs) {
+        if (!(x == "" || x == " ")) {
+            equal_set.insert(x);
+        }
+        else
+        {
+            equal_set.insert("e");
+        }
+    }
+    
+    if (equal_set.size() == 1) {
+        equal_set.erase("e");
+        if (equal_set.size() == 1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool testwin(){
+    vector<string> board_one_dimensional;
+    for (int i = 0; i < length(board); i++) {
+        for (string str : board[i]) {
+            board_one_dimensional.push_back(str);
+        }
+    }
+
+    std::set<string> equal_set;
+    vector<string> working_rows;
+    vector<string> working_cols;
+
+    //check rows & cols
+    for (int i = 0; i < board_one_dimensional.size(); i+=3) {
+        working_rows.push_back(board_one_dimensional[i]);
+        working_rows.push_back(board_one_dimensional[i + 1]);
+        working_rows.push_back(board_one_dimensional[i + 2]);
+
+        int j = i / 3;
+        working_cols.push_back(board_one_dimensional[j]);
+        working_cols.push_back(board_one_dimensional[j + 3]);
+        working_cols.push_back(board_one_dimensional[j + 6]);
+        
+        for (string x : working_rows) {
+            std::cout << x << " ";
+
+        }
+        for (string x : working_cols) {
+            std::cout << x << " ";
+        }
+        std::cout << std::endl;
+        if (checkequals(working_rows) || checkequals(working_cols)) {
+            std::cout << "Checking: " << checkequals(working_rows) << " " << checkequals(working_cols) << std::endl;
+            return true;
+        }
+        working_cols.clear();
+        working_rows.clear();
+
+        std::cout << "Rows and Cols passed" << std::endl;
+    }
+
+    //check diags
+    //working_rows is top left -> bottom right, working_cols is top right -> bottom left
+    int j = 2;
+    for (int i = 0; i < board_one_dimensional.size(); i += 4) {
+        working_rows.push_back(board_one_dimensional[i]);
+        working_cols.push_back(board_one_dimensional[j]);
+
+        j += 2;
+    }
+    if (checkequals(working_rows) || checkequals(working_cols)) {
+        return true;
+    }
+    working_cols.clear();
+    working_rows.clear();
+
+    return false;
+}
+
+vector<int> strtonums(string& input) {
+    vector<int> ret = {};
+
+
+    stringstream ss(input);
+    int item;
+
+    while (ss >> item) {
+        ret.push_back(item);
+    }
+    
+    return ret;
+}
+
+bool checknums(vector<int>& nums) {
+    std::set<int> valid_nums;
+    valid_nums.insert(1);
+    valid_nums.insert(2);
+    valid_nums.insert(3);
+
+    std::set<int>::iterator it = valid_nums.find(nums[0]);
+    std::set<int>::iterator it2 = valid_nums.find(nums[1]);
+
+
+    if (it == valid_nums.end() || it2 == valid_nums.end()) {
+        return false;
+    }
+    return true;
+}
+
+string getboardatspot(vector<int>& coords) {
+    return board[coords[1] - 1][coords[0] - 1];
+}
+
+void setboardatspot(vector<int>& coords, char& set) {
+    board[coords[1] - 1][coords[0] - 1] = set;
+}
+
+//player 1 is X, player 2 is O
+void playerturn(int player_number) {
+    char player = 'E';
+    player_number == 1 ? player = 'x' : player = 'o';
+
+    std::cout << "You are: " << player << std::endl << std::endl;
+
+    displayboard(true);
+
+    std::cout << "\nPlease enter the coordinate that you would like to play \"column, row\" (e.g. \"2, 3\"):" << std::endl;
+
+    vector<int> coords;
+    while (true) {
+        string in = input();
+
+        vector<int> to_nums = strtonums(in);
+        /*for (int x : to_nums) {
+            std::cout << x << " ";
+        }
+        std::cout << std::endl;*/
+
+        if (to_nums.size() >= 2) {
+            if (checknums(to_nums)) {
+
+                if (getboardatspot(to_nums) != " ") {
+                    coords = to_nums;
+                    break;
+                }
+            }
+        }
+        else {
+            std::cout << "Two valid numbers not provided, please try again." << std::endl;
+        }
+    }
+    setboardatspot(coords, player);
+    std::cout << "Successful move for player " << player << " at position (" << coords[0] << ", " << coords[1] << ")" << std::endl;
+}
+
+void gameloop() {
+    int turn_number = 0;
+    //detemine if the player goes first (50/50 chance)
+    bool playerone_goes_first = pickfirst();
+    playerone_goes_first ? std::cout << "Player one (x) goes first.\n" << std::endl : std::cout << "Player two (o) goes first.\n" << std::endl;
+
+    while (true) {
+        std::cout << "Current Board: \n" << std::endl;
+        displayboard(false);
+        std::cout << std::endl;
+        
+        bool even_turn = turn_number % 2 == 0;
+        bool turn = false;
+
+        if (even_turn == playerone_goes_first) {
+            playerturn(1);
+        }
+        else {
+            playerturn(2);
+        }
+        if (testwin()) {
+            std::cout << "Winner! Player: " << turn_number % 2 + 1 << ". Final board:" << std::endl;
+            displayboard(false);
+            break;
+        }
+
+        turn_number++;
+    }
+}
+
+int main()
+{
+    gameloop();
+
+    return 0;
+}
